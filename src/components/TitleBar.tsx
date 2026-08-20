@@ -26,9 +26,10 @@ export const TitleBar: React.FC<TitleBarProps> = ({ imageCount }) => {
 
   return (
     <div className="h-8 bg-[#000000] border-b border-[#1c1c1c] flex items-center justify-between px-3 select-none text-xs text-[#e1e1e1] drag-region z-50">
-      {/* Left: App Title */}
+      {/* Left: App Icon & Title */}
       <div className="flex items-center gap-2 no-drag">
-        <span className="font-medium text-[#e1e1e1] tracking-wide">flashbang</span>
+        <img src="/icon.png" alt="Flashbang" className="w-4 h-4 rounded object-contain" />
+        <span className="font-medium text-[#e1e1e1] tracking-wide">Flashbang</span>
       </div>
 
       {/* Center: Status */}

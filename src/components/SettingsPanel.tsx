@@ -47,16 +47,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   return (
     <div className="h-[30%] bg-[#141414] flex flex-col select-none text-xs border-t border-[#1f1f1f] overflow-hidden text-[#e1e1e1]">
-      {/* Panel Tab Header (Settings box is seamlessly flush with background below) */}
-      <div className="h-8 bg-[#0a0a0a] flex items-stretch select-none">
-        <div className="px-5 flex items-center text-[11px] font-semibold tracking-wider uppercase border-r border-[#1f1f1f] bg-[#141414] text-[#ffffff]">
-          Settings
-        </div>
-        <div className="flex-1 border-b border-[#1f1f1f]"></div>
-      </div>
-
-      {/* Panel Content: Coordinates | Save Options | Separator | Hotkeys */}
-      <div className="flex-1 p-4 bg-[#141414] overflow-y-auto">
+      {/* Panel Content: Unified #141414 background throughout */}
+      <div className="flex-1 p-5 bg-[#141414] overflow-y-auto">
         <div className="flex flex-col md:flex-row items-start gap-8 h-full w-full">
           {/* 1. Left: Coordinates */}
           <div className="w-64 space-y-3 flex-shrink-0">

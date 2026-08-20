@@ -104,9 +104,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <ImageIcon size={14} />
                     </div>
 
-                    {/* File Name Only */}
+                    {/* File Name Only (VS Code explorer typography) */}
                     <div className="truncate flex items-center">
-                      <span className="font-mono text-[12px] truncate">{img.name}</span>
+                      <span className="text-[13px] font-normal text-[#cccccc] group-hover:text-[#ffffff] truncate">{img.name}</span>
                     </div>
                   </div>
 

@@ -102,7 +102,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                 `}
               >
                 <ImageIcon size={13} className="text-[#aaaaaa] flex-shrink-0" />
-                <span className="font-mono text-[11.5px] truncate max-w-[120px]">{img.name}</span>
+                <span className="text-[12.5px] font-normal truncate max-w-[140px]">{img.name}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

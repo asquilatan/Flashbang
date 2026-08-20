@@ -20,6 +20,7 @@ async function createMainWindow() {
     minHeight: 600,
     frame: false, // Custom VS Code titlebar
     backgroundColor: '#000000',
+    icon: path.join(__dirname, '../media/icon_taskbar.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -48,6 +49,9 @@ async function createMainWindow() {
 
 // App lifecycle
 app.whenReady().then(async () => {
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.asquilatan.flashbang');
+  }
   await initDatabase();
   tempManager.init();
   await createMainWindow();
