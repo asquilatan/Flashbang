@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export interface ToastMessage {
   id: string;
@@ -33,18 +33,6 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
     return () => clearTimeout(timer);
   }, [toast, onDismiss]);
 
-  const getIcon = () => {
-    switch (toast.type) {
-      case 'success':
-        return <CheckCircle2 size={15} className="text-[#e1e1e1] flex-shrink-0" />;
-      case 'error':
-        return <AlertCircle size={15} className="text-[#f44747] flex-shrink-0" />;
-      case 'info':
-      default:
-        return <Info size={15} className="text-[#aaaaaa] flex-shrink-0" />;
-    }
-  };
-
   const getBorderColor = () => {
     switch (toast.type) {
       case 'success':
@@ -64,7 +52,6 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
         shadow-2xl rounded-r px-3.5 py-2.5 flex items-start gap-2.5 text-xs animate-in slide-in-from-right-4 transition-all
       `}
     >
-      <div className="mt-0.5">{getIcon()}</div>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-[#ffffff] text-[12px] leading-tight">{toast.title}</p>
         {toast.message && (
