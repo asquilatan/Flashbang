@@ -98,7 +98,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                 }}
                 className={`
                   group flex items-center gap-2 px-3 h-full cursor-pointer text-xs border-r border-[#1f1f1f] transition-colors
-                  ${isActive ? 'bg-[#000000] text-[#ffffff] font-medium border-t-2 border-t-[#e1e1e1]' : 'bg-[#111111] text-[#777777] hover:bg-[#181818] border-t-2 border-t-transparent'}
+                  ${isActive ? 'bg-[#000000] text-[#ffffff] font-medium' : 'bg-[#111111] text-[#777777] hover:bg-[#181818]'}
                 `}
               >
                 <ImageIcon size={13} className="text-[#aaaaaa] flex-shrink-0" />
@@ -191,11 +191,6 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                   <RotateCcw size={13} />
                 </button>
               </div>
-            </div>
-
-            {/* Floating Top Left Badge */}
-            <div className="absolute top-3 left-4 bg-[#141414cc] border border-[#242424] rounded px-2.5 py-1 text-[11px] font-mono text-[#888888] z-20">
-              {activeImage.name}
             </div>
           </div>
         ) : null}
