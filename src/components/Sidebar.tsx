@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Image as ImageIcon, 
-  Trash2, 
-  GripVertical 
+  Trash2 
 } from 'lucide-react';
 import { ScreenshotItem } from '../types';
 
@@ -98,12 +97,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ${isDragOver ? 'border-t-2 border-[#e1e1e1] bg-[#1a1a1a]' : 'border-t-2 border-transparent'}
                   `}
                 >
-                  {/* Left: Drag Handle & Icon & Name Only */}
+                  {/* Left: Icon & Name Only */}
                   <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
-                    <div className="text-[#444444] group-hover:text-[#777777] cursor-grab active:cursor-grabbing -ml-1">
-                      <GripVertical size={13} />
-                    </div>
-                    
                     {/* Image Icon */}
                     <div className="w-4 h-4 rounded flex items-center justify-center text-[#aaaaaa] flex-shrink-0">
                       <ImageIcon size={14} />
@@ -127,11 +122,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                       <Trash2 size={12} />
                     </button>
-                  </div>
-
-                  {/* Order Badge when not hovered */}
-                  <div className="group-hover:hidden text-[10px] font-mono text-[#555555] px-1.5 flex-shrink-0">
-                    #{index + 1}
                   </div>
                 </div>
               );
