@@ -35,13 +35,23 @@ export async function initDatabase(): Promise<void> {
   }
   dbPath = path.join(userDataPath, 'settings.db');
 
-  let locateFile: ((file: string) => string) | undefined = undefined;
-  try {
-    const wasmPath = require.resolve('sql.js/dist/sql-wasm.wasm');
-    locateFile = () => wasmPath;
-  } catch {
-    locateFile = (file) => path.join(__dirname, '../node_modules/sql.js/dist', file);
-  }
+  let locateFile = (file: string) => {
+    try {
+      const resolved = require.resolve(`sql.js/dist/${file}`);
+      if (fs.existsSync(resolved)) return resolved;
+    } catch {}
+
+    const candidates = [
+      path.join(__dirname, '../node_modules/sql.js/dist', file),
+      path.join(process.resourcesPath || '', 'app.asar.unpacked/node_modules/sql.js/dist', file),
+      path.join(process.resourcesPath || '', 'node_modules/sql.js/dist', file),
+      path.join(process.resourcesPath || '', file),
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c)) return c;
+    }
+    return path.join(__dirname, '../node_modules/sql.js/dist', file);
+  };
 
   const SQL = await initSqlJs({
     locateFile,

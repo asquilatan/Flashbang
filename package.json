@@ -1,5 +1,6 @@
 {
-  "name": "screenshot-tool",
+  "name": "flashbang",
+  "productName": "Flashbang",
   "version": "1.0.0",
   "description": "Desktop Coordinate Screenshot to PDF & ZIP Tool",
   "main": "dist-electron/main.js",
@@ -9,7 +10,51 @@
     "build:electron": "tsc -p tsconfig.electron.json",
     "build:all": "npm run build && npm run build:electron",
     "start": "concurrently -k \"tsc -p tsconfig.electron.json -w --preserveWatchOutput\" \"vite\" \"wait-on tcp:5173 && electron .\"",
-    "start:dist": "npm run build:all && cross-env NODE_ENV=production electron ."
+    "start:dist": "npm run build:all && cross-env NODE_ENV=production electron .",
+    "dist": "npm run build:all && electron-builder --win",
+    "dist:portable": "npm run build:all && electron-builder --win portable",
+    "dist:dir": "npm run build:all && electron-builder --win --dir"
+  },
+  "build": {
+    "appId": "com.asquilatan.flashbang",
+    "productName": "Flashbang",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "media/**/*",
+      "node_modules/sql.js/dist/sql-wasm.wasm"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/sql.js/dist/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "media/icon_taskbar.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Flashbang"
+    }
   },
   "keywords": [
     "screenshot",
@@ -17,7 +62,7 @@
     "pdf",
     "coordinates"
   ],
-  "author": "",
+  "author": "asquilatan",
   "license": "MIT",
   "dependencies": {
     "jszip": "^3.10.1",
@@ -37,6 +82,7 @@
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "electron": "^31.0.2",
+    "electron-builder": "^26.15.3",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.5.2",

@@ -30,6 +30,11 @@ npm install
 # Start with live reload
 npm start
 
-# Build production bundle
-npm run build:all
+# Build production binaries
+npm run dist
 ```
+
+### Packaging & Executables
+
+- `npm run dist` — Generates both the **Portable `.exe`** and the **Setup Installer (`.exe`)** in the `release/` directory.
+- `npm run dist:portable` — Generates standalone single-file `Flashbang 1.0.0.exe`.
