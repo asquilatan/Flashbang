@@ -37,8 +37,11 @@ export function updateRegisteredHotkeys(): void {
           if (mainWindowRef && !mainWindowRef.isDestroyed()) {
             mainWindowRef.webContents.send('on-screenshot-captured', item);
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error('Failed to capture screenshot on hotkey:', err);
+          if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+            mainWindowRef.webContents.send('on-capture-error', err?.message || 'Capture failed');
+          }
         }
       });
       if (ok) {
