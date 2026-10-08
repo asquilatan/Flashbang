@@ -6,6 +6,8 @@ import { tempManager } from './tempManager';
 import { capturePrimaryScreenRegion } from './screenCapture';
 import { initHotkeys, updateRegisteredHotkeys, unregisterAllHotkeys } from './hotkeys';
 import { openRegionSelectOverlay, closeRegionSelectOverlay } from './overlay';
+import { openWindowSelectOverlay, closeWindowSelectOverlay } from './windowOverlay';
+import { enumeratePickableWindows, closeWindowPickerCache } from './windowPicker';
 import { exportToPdf, exportToZip } from './export';
 
 let mainWindow: BrowserWindow | null = null;
@@ -72,11 +74,13 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   unregisterAllHotkeys();
   tempManager.cleanUpSession();
+  closeWindowPickerCache();
 });
 
 app.on('will-quit', () => {
   unregisterAllHotkeys();
   tempManager.cleanUpSession();
+  closeWindowPickerCache();
 });
 
 // Window controls
@@ -173,6 +177,47 @@ ipcMain.handle('clear-all-images', () => {
 ipcMain.handle('start-region-select', () => {
   openRegionSelectOverlay();
 });
+
+ipcMain.handle('start-window-select', () => {
+  openWindowSelectOverlay();
+});
+
+ipcMain.on(
+  'overlay-window-selected',
+  (_event, payload: { hwnd: number; title: string }) => {
+    closeWindowSelectOverlay();
+
+    const match = enumeratePickableWindows().then((windows) =>
+      windows.find((w) => w.hwnd === payload.hwnd)
+    );
+
+    match
+      .then((found) => {
+        const rect = found ? found.rect : null;
+
+        const updated = updateStoredSettings({
+          captureMode: 'window',
+          windowHwnd: payload.hwnd,
+          windowTitle: payload.title,
+          windowX1: rect ? rect.left : 0,
+          windowY1: rect ? rect.top : 0,
+          windowX2: rect ? rect.right : 0,
+          windowY2: rect ? rect.bottom : 0,
+        });
+
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('on-settings-updated', updated);
+          mainWindow.focus();
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to persist selected window:', err);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.focus();
+        }
+      });
+  }
+);
 
 ipcMain.on('overlay-selected', (_event, coords: { x1: number; y1: number; x2: number; y2: number }) => {
   closeRegionSelectOverlay();
