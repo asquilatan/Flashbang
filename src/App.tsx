@@ -16,6 +16,13 @@ export const App: React.FC = () => {
     undoHotkey: 'Shift+X',
     pdfPageMode: 'exact',
     pdfOrientation: 'auto',
+    captureMode: 'region',
+    windowHwnd: null,
+    windowTitle: '',
+    windowX1: 0,
+    windowY1: 0,
+    windowX2: 0,
+    windowY2: 0,
   });
 
   const [images, setImages] = useState<ScreenshotItem[]>([]);
@@ -74,11 +81,20 @@ export const App: React.FC = () => {
       setSettings(updated);
     });
 
+    const cleanupError = window.electronAPI.onCaptureError((message) => {
+      addToast({
+        type: 'error',
+        title: 'Capture Failed',
+        message,
+      });
+    });
+
     return () => {
       cleanupCapture();
       cleanupUndo();
       cleanupImages();
       cleanupSettings();
+      cleanupError();
     };
   }, [addToast]);
 
@@ -182,7 +198,16 @@ export const App: React.FC = () => {
 
   const handleStartRegionSelect = async () => {
     if (!window.electronAPI) return;
+    // Choosing a region makes region the active capture target.
+    await handleUpdateSettings({ captureMode: 'region' });
     await window.electronAPI.startRegionSelect();
+  };
+
+  const handleStartWindowSelect = async () => {
+    if (!window.electronAPI) return;
+    // The overlay writes captureMode/window* itself once a window is chosen, so that
+    // cancelling with ESC leaves the previous target untouched.
+    await window.electronAPI.startWindowSelect();
   };
 
   const handleSaveToPdf = async () => {
@@ -279,6 +304,7 @@ export const App: React.FC = () => {
             images={images}
             onUpdateSettings={handleUpdateSettings}
             onStartRegionSelect={handleStartRegionSelect}
+            onStartWindowSelect={handleStartWindowSelect}
             onCaptureNow={handleCaptureNow}
             onUndoLast={handleUndoLast}
             onSaveToPdf={handleSaveToPdf}
