@@ -1,3 +1,5 @@
+export type CaptureMode = 'region' | 'window';
+
 export interface AppSettings {
   x1: number;
   y1: number;
@@ -7,6 +9,13 @@ export interface AppSettings {
   undoHotkey: string;
   pdfPageMode: 'fit_a4' | 'exact';
   pdfOrientation: 'auto' | 'portrait' | 'landscape';
+  captureMode: CaptureMode;
+  windowHwnd: number | null;
+  windowTitle: string;
+  windowX1: number;
+  windowY1: number;
+  windowX2: number;
+  windowY2: number;
 }
 
 export interface ScreenshotItem {
@@ -37,6 +46,7 @@ export interface ElectronAPI {
   reorderImages: (orderedIds: string[]) => Promise<{ success: boolean }>;
   clearAllImages: () => Promise<{ success: boolean }>;
   startRegionSelect: () => Promise<void>;
+  startWindowSelect: () => Promise<void>;
   saveToPdf: () => Promise<{ success: boolean; filePath?: string; canceled?: boolean; error?: string }>;
   saveToZip: () => Promise<{ success: boolean; filePath?: string; canceled?: boolean; error?: string }>;
   getPrimaryDisplayBounds: () => Promise<DisplayInfo>;
@@ -44,6 +54,7 @@ export interface ElectronAPI {
   onScreenshotUndone: (callback: (removedId: string) => void) => () => void;
   onImagesUpdated: (callback: (images: ScreenshotItem[]) => void) => () => void;
   onSettingsUpdated: (callback: (settings: AppSettings) => void) => () => void;
+  onCaptureError: (callback: (message: string) => void) => () => void;
   minimizeWindow: () => void;
   maximizeWindow: () => void;
   closeWindow: () => void;
