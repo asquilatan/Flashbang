@@ -7,6 +7,7 @@ interface SettingsPanelProps {
   images: ScreenshotItem[];
   onUpdateSettings: (newSettings: Partial<AppSettings>) => void;
   onStartRegionSelect: () => void;
+  onStartWindowSelect: () => void;
   onCaptureNow: () => void;
   onUndoLast: () => void;
   onSaveToPdf: () => void;
@@ -21,6 +22,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   images,
   onUpdateSettings,
   onStartRegionSelect,
+  onStartWindowSelect,
   onCaptureNow,
   onUndoLast,
   onSaveToPdf,
@@ -33,6 +35,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   const width = Math.abs(settings.x2 - settings.x1);
   const height = Math.abs(settings.y2 - settings.y1);
+
+  const isWindowMode = settings.captureMode === 'window';
+  const windowWidth = Math.abs(settings.windowX2 - settings.windowX1);
+  const windowHeight = Math.abs(settings.windowY2 - settings.windowY1);
+  const hasWindow = settings.windowHwnd !== null;
 
   const handleCoordChange = (key: 'x1' | 'y1' | 'x2' | 'y2', val: string) => {
     const num = parseInt(val, 10);
@@ -50,16 +57,64 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       {/* Panel Content: Unified #141414 background throughout */}
       <div className="flex-1 p-5 bg-[#141414] overflow-y-auto">
         <div className="flex flex-col md:flex-row items-start gap-8 h-full w-full">
-          {/* 1. Left: Coordinates */}
+          {/* 1. Left: Capture Target */}
           <div className="w-64 space-y-3 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-[#e1e1e1] text-[11.5px]">Coordinates</span>
+              <span className="font-semibold text-[#e1e1e1] text-[11.5px]">Capture Target</span>
               <span className="font-mono text-[10.5px] text-[#aaaaaa] bg-[#0a0a0a] px-1.5 py-0.5 rounded border border-[#222222]">
-                {width} × {height} px
+                {isWindowMode ? `${windowWidth} × ${windowHeight} px` : `${width} × ${height} px`}
               </span>
             </div>
 
             <div className="space-y-2 text-[11px]">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-[#888888]">Mode</span>
+                <div className="flex bg-[#0a0a0a] border border-[#222222] rounded overflow-hidden">
+                  <button
+                    onClick={() => onUpdateSettings({ captureMode: 'region' })}
+                    className={`px-2.5 py-1 font-mono text-[10.5px] transition-colors ${
+                      isWindowMode ? 'text-[#666666]' : 'bg-[#e1e1e1] text-[#000000] font-semibold'
+                    }`}
+                    title="Capture a fixed screen region"
+                  >
+                    Region
+                  </button>
+                  <button
+                    onClick={onStartWindowSelect}
+                    className={`px-2.5 py-1 font-mono text-[10.5px] transition-colors ${
+                      isWindowMode ? 'bg-[#e1e1e1] text-[#000000] font-semibold' : 'text-[#666666]'
+                    }`}
+                    title="Capture a chosen window at its own size"
+                  >
+                    Window
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {isWindowMode && (
+              <div className="space-y-2 text-[11px]">
+                <div className="flex items-start justify-between gap-4">
+                  <span className="text-[#888888] shrink-0">Selected window</span>
+                  <span
+                    className="flex-1 text-right text-[#aaaaaa] truncate bg-[#0a0a0a] px-2 py-1 border border-[#222222]"
+                    title={hasWindow ? settings.windowTitle : undefined}
+                  >
+                    {hasWindow ? settings.windowTitle : 'None selected'}
+                  </span>
+                </div>
+                {hasWindow && (
+                  <button
+                    onClick={() => onUpdateSettings({ captureMode: 'region', windowHwnd: null, windowTitle: '' })}
+                    className="w-full bg-[#222222] hover:bg-[#2c2c2c] text-[#aaaaaa] py-1 rounded text-[11px] transition-colors"
+                  >
+                    <span>Clear window</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className={`space-y-2 text-[11px] ${isWindowMode ? 'opacity-40 pointer-events-none' : ''}`}>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-[#888888]">Top-left (x1, y1)</span>
                 <div className="flex gap-2">
@@ -101,12 +156,29 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
             </div>
 
-            <button
-              onClick={onStartRegionSelect}
-              className="w-full flex items-center justify-center bg-[#e1e1e1] hover:bg-[#ffffff] text-[#000000] py-1.5 rounded text-[11px] font-semibold transition-colors shadow-sm"
-            >
-              <span>Select region on screen</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={onStartRegionSelect}
+                className={`flex items-center justify-center py-1.5 rounded text-[11px] font-semibold transition-colors shadow-sm ${
+                  isWindowMode
+                    ? 'bg-[#222222] hover:bg-[#2c2c2c] text-[#aaaaaa]'
+                    : 'bg-[#e1e1e1] hover:bg-[#ffffff] text-[#000000]'
+                }`}
+              >
+                <span>Select region</span>
+              </button>
+              <button
+                onClick={onStartWindowSelect}
+                className={`flex items-center justify-center py-1.5 rounded text-[11px] font-semibold transition-colors shadow-sm ${
+                  isWindowMode
+                    ? 'bg-[#e1e1e1] hover:bg-[#ffffff] text-[#000000]'
+                    : 'bg-[#222222] hover:bg-[#2c2c2c] text-[#aaaaaa]'
+                }`}
+                title="Capture a window at its own size"
+              >
+                <span>Use window</span>
+              </button>
+            </div>
           </div>
 
           {/* 2. Middle: Save Options */}
