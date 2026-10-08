@@ -3,6 +3,8 @@ import fs from 'fs';
 import { app } from 'electron';
 import initSqlJs, { Database } from 'sql.js';
 
+export type CaptureMode = 'region' | 'window';
+
 export interface AppSettings {
   x1: number;
   y1: number;
@@ -12,6 +14,13 @@ export interface AppSettings {
   undoHotkey: string;
   pdfPageMode: 'fit_a4' | 'exact';
   pdfOrientation: 'auto' | 'portrait' | 'landscape';
+  captureMode: CaptureMode;
+  windowHwnd: number | null;
+  windowTitle: string;
+  windowX1: number;
+  windowY1: number;
+  windowX2: number;
+  windowY2: number;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -23,6 +32,13 @@ const DEFAULT_SETTINGS: AppSettings = {
   undoHotkey: 'Shift+X',
   pdfPageMode: 'exact',
   pdfOrientation: 'auto',
+  captureMode: 'region',
+  windowHwnd: null,
+  windowTitle: '',
+  windowX1: 0,
+  windowY1: 0,
+  windowX2: 0,
+  windowY2: 0,
 };
 
 let db: Database | null = null;
