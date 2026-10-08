@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   reorderImages: (orderedIds: string[]) => ipcRenderer.invoke('reorder-images', orderedIds),
   clearAllImages: () => ipcRenderer.invoke('clear-all-images'),
   startRegionSelect: () => ipcRenderer.invoke('start-region-select'),
+  startWindowSelect: () => ipcRenderer.invoke('start-window-select'),
   saveToPdf: () => ipcRenderer.invoke('save-to-pdf'),
   saveToZip: () => ipcRenderer.invoke('save-to-zip'),
   getPrimaryDisplayBounds: () => ipcRenderer.invoke('get-primary-display-bounds'),
@@ -42,6 +43,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('on-settings-updated', handler);
     return () => {
       ipcRenderer.removeListener('on-settings-updated', handler);
+    };
+  },
+  onCaptureError: (callback: (message: string) => void) => {
+    const handler = (_event: any, message: string) => callback(message);
+    ipcRenderer.on('on-capture-error', handler);
+    return () => {
+      ipcRenderer.removeListener('on-capture-error', handler);
     };
   },
   minimizeWindow: () => ipcRenderer.send('window-minimize'),
