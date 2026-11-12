@@ -4,6 +4,7 @@ import { PDFDocument } from 'pdf-lib';
 import JSZip from 'jszip';
 import { tempManager } from './tempManager';
 import { getStoredSettings } from './db';
+import { getProcessedPng } from './imageProcessing';
 
 const A4_PORTRAIT_WIDTH = 595.28;
 const A4_PORTRAIT_HEIGHT = 841.89;
@@ -31,7 +32,7 @@ export async function exportToPdf(window: BrowserWindow | null): Promise<{ succe
     for (const item of items) {
       if (!fs.existsSync(item.filePath)) continue;
 
-      const imgBytes = fs.readFileSync(item.filePath);
+      const imgBytes = getProcessedPng(item);
       const embeddedImage = await pdfDoc.embedPng(imgBytes);
       const imgWidth = embeddedImage.width;
       const imgHeight = embeddedImage.height;
@@ -110,7 +111,7 @@ export async function exportToZip(window: BrowserWindow | null): Promise<{ succe
       const item = items[i];
       if (!fs.existsSync(item.filePath)) continue;
 
-      const fileBuffer = fs.readFileSync(item.filePath);
+      const fileBuffer = getProcessedPng(item);
       const targetName = `${String(i + 1).padStart(4, '0')}.png`;
       zip.file(targetName, fileBuffer);
     }
