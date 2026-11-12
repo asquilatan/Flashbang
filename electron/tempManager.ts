@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { app } from 'electron';
+import type { CropSpec } from './crop';
 
 export interface ScreenshotItem {
   id: string;
@@ -12,6 +13,7 @@ export interface ScreenshotItem {
   height: number;
   timestamp: number;
   sizeBytes: number;
+  crop: CropSpec | null;
 }
 
 class TempManager {
@@ -54,9 +56,21 @@ class TempManager {
       height,
       timestamp: Date.now(),
       sizeBytes: stats.size,
+      crop: null,
     };
 
     this.items.push(item);
+    return item;
+  }
+
+  public setCrop(id: string, crop: CropSpec | null): ScreenshotItem | null {
+    const index = this.items.findIndex(item => item.id === id);
+    if (index === -1) return null;
+    const item = {
+      ...this.items[index],
+      crop: crop === null ? null : { ...crop, rect: { ...crop.rect } },
+    };
+    this.items[index] = item;
     return item;
   }
 

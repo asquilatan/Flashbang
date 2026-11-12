@@ -15,6 +15,7 @@ export interface AppSettings {
   pdfPageMode: 'fit_a4' | 'exact';
   pdfOrientation: 'auto' | 'portrait' | 'landscape';
   captureMode: CaptureMode;
+  autoDetectBlackBars: boolean;
   windowHwnd: number | null;
   windowTitle: string;
   windowX1: number;
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   pdfPageMode: 'exact',
   pdfOrientation: 'auto',
   captureMode: 'region',
+  autoDetectBlackBars: false,
   windowHwnd: null,
   windowTitle: '',
   windowX1: 0,
