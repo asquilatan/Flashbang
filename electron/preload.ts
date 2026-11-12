@@ -2,11 +2,15 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { AppSettings } from './db';
 import { ScreenshotItem } from './tempManager';
 import type { CropSpec } from './crop';
+import type { InsertPdfPagesPayload } from './ipcTypes';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings: Partial<AppSettings>) => ipcRenderer.invoke('save-settings', settings),
   getImages: () => ipcRenderer.invoke('get-images'),
+  pickPdf: () => ipcRenderer.invoke('pick-pdf'),
+  insertPdfPages: (payload: InsertPdfPagesPayload) => ipcRenderer.invoke('insert-pdf-pages', payload),
+  insertImages: (afterId: string | null) => ipcRenderer.invoke('insert-images', afterId),
   setImageCrop: (id: string, crop: CropSpec | null) => ipcRenderer.invoke('set-image-crop', id, crop),
   detectImageCrop: (id: string) => ipcRenderer.invoke('detect-image-crop', id),
   captureNow: () => ipcRenderer.invoke('capture-now'),

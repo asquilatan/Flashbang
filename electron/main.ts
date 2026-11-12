@@ -11,10 +11,21 @@ import { enumeratePickableWindows, closeWindowPickerCache } from './windowPicker
 import { exportToPdf, exportToZip } from './export';
 import { validateCropSpec } from './crop';
 import { detectScreenshotCrop } from './imageProcessing';
+import { pickPdf, validateInsertPdfPagesPayload, insertPdfPages, pickAndInsertImages } from './slideImport';
 
 let mainWindow: BrowserWindow | null = null;
 
 const isDev = process.env.NODE_ENV !== 'production' && !app.isPackaged;
+
+function isTrustedSender(event: Electron.IpcMainInvokeEvent): boolean {
+  return !!mainWindow && !mainWindow.isDestroyed() &&
+    event.sender === mainWindow.webContents &&
+    event.senderFrame === mainWindow.webContents.mainFrame;
+}
+
+function importFailure(error: unknown): { success: false; error: string } {
+  return { success: false, error: error instanceof Error ? error.message : 'Import failed.' };
+}
 
 async function createMainWindow() {
   mainWindow = new BrowserWindow({
@@ -124,6 +135,43 @@ ipcMain.handle('save-settings', (_event, updates) => {
 
 ipcMain.handle('get-images', () => {
   return tempManager.getItems();
+});
+
+ipcMain.handle('pick-pdf', async (event) => {
+  if (!isTrustedSender(event)) return importFailure(new Error('PDF import requests must come from the main window.'));
+  try {
+    return await pickPdf(mainWindow);
+  } catch (error) {
+    return importFailure(error);
+  }
+});
+
+ipcMain.handle('insert-pdf-pages', (event, value: unknown) => {
+  if (!isTrustedSender(event)) return importFailure(new Error('PDF import requests must come from the main window.'));
+  try {
+    const payload = validateInsertPdfPagesPayload(value);
+    const items = insertPdfPages(payload);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('on-images-updated', tempManager.getItems());
+    }
+    return { success: true, items };
+  } catch (error) {
+    return importFailure(error);
+  }
+});
+
+ipcMain.handle('insert-images', async (event, afterId: unknown) => {
+  if (!isTrustedSender(event)) return importFailure(new Error('Image import requests must come from the main window.'));
+  if (afterId !== null && typeof afterId !== 'string') return importFailure(new Error('Invalid insertion target.'));
+  try {
+    const result = await pickAndInsertImages(mainWindow, afterId);
+    if (result.success && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('on-images-updated', tempManager.getItems());
+    }
+    return result;
+  } catch (error) {
+    return importFailure(error);
+  }
 });
 
 ipcMain.handle('capture-now', async () => {
