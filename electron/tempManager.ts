@@ -3,6 +3,13 @@ import fs from 'fs';
 import { app } from 'electron';
 import type { CropSpec } from './crop';
 
+export type ImageOrigin = 'capture' | 'pdf' | 'image';
+
+export interface PageSize {
+  width: number;
+  height: number;
+}
+
 export interface ScreenshotItem {
   id: string;
   name: string;
@@ -14,6 +21,17 @@ export interface ScreenshotItem {
   timestamp: number;
   sizeBytes: number;
   crop: CropSpec | null;
+  origin: ImageOrigin;
+  pageSize?: PageSize;
+}
+
+export interface NewImageInput {
+  buffer: Buffer;
+  width: number;
+  height: number;
+  name: string;
+  origin: ImageOrigin;
+  pageSize?: PageSize;
 }
 
 class TempManager {
@@ -57,10 +75,87 @@ class TempManager {
       timestamp: Date.now(),
       sizeBytes: stats.size,
       crop: null,
+      origin: 'capture',
     };
 
     this.items.push(item);
     return item;
+  }
+
+  public insertImages(inputs: NewImageInput[], afterId: string | null): ScreenshotItem[] {
+    if (!Array.isArray(inputs) || inputs.length === 0) {
+      throw new Error('No slides to insert.');
+    }
+
+    let insertAt = this.items.length;
+    if (afterId !== null) {
+      const targetIndex = this.items.findIndex(item => item.id === afterId);
+      if (targetIndex === -1) throw new Error('The selected slide no longer exists.');
+      insertAt = targetIndex + 1;
+    }
+
+    const prepared: ScreenshotItem[] = [];
+    try {
+      for (const input of inputs) {
+        if (!Buffer.isBuffer(input.buffer) || input.buffer.length === 0) {
+          throw new Error('An inserted slide has no image data.');
+        }
+        if (!Number.isInteger(input.width) || !Number.isInteger(input.height) || input.width <= 0 || input.height <= 0) {
+          throw new Error('An inserted slide has invalid dimensions.');
+        }
+        if (input.pageSize && (
+          !Number.isFinite(input.pageSize.width) || !Number.isFinite(input.pageSize.height) ||
+          input.pageSize.width <= 0 || input.pageSize.height <= 0
+        )) {
+          throw new Error('An inserted slide has an invalid page size.');
+        }
+
+        const indexNumber = this.nextIndex++;
+        const formattedName = `${String(indexNumber).padStart(4, '0')}.png`;
+        const filePath = path.join(this.sessionDir, formattedName);
+
+        fs.writeFileSync(filePath, input.buffer);
+        const stats = fs.statSync(filePath);
+
+        prepared.push({
+          id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: this.uniqueName(input.name, prepared),
+          indexNumber,
+          filePath,
+          dataUrl: `data:image/png;base64,${input.buffer.toString('base64')}`,
+          width: input.width,
+          height: input.height,
+          timestamp: Date.now(),
+          sizeBytes: stats.size,
+          crop: null,
+          origin: input.origin,
+          ...(input.pageSize ? { pageSize: { ...input.pageSize } } : {}),
+        });
+      }
+    } catch (error) {
+      for (const item of prepared) {
+        try {
+          fs.unlinkSync(item.filePath);
+        } catch {}
+      }
+      throw error;
+    }
+
+    this.items.splice(insertAt, 0, ...prepared);
+    return prepared;
+  }
+
+  private uniqueName(desired: string, pending: ScreenshotItem[] = []): string {
+    const used = new Set([...this.items, ...pending].map(item => item.name));
+    const clean = desired.trim() || 'slide.png';
+    if (!used.has(clean)) return clean;
+    const extension = path.extname(clean);
+    const base = extension ? clean.slice(0, -extension.length) : clean;
+    for (let suffix = 2; suffix < 100000; suffix++) {
+      const candidate = `${base} (${suffix})${extension}`;
+      if (!used.has(candidate)) return candidate;
+    }
+    return `${base} (${Date.now()})${extension}`;
   }
 
   public setCrop(id: string, crop: CropSpec | null): ScreenshotItem | null {

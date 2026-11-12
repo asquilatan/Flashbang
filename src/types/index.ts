@@ -1,6 +1,17 @@
 import type { CropSpec } from '../../electron/crop';
+import type {
+  ImportedSlidesResult,
+  InsertPdfPagesPayload,
+  PickPdfResult,
+} from '../../electron/ipcTypes';
 
 export type CaptureMode = 'region' | 'window';
+export type ImageOrigin = 'capture' | 'pdf' | 'image';
+
+export interface PageSize {
+  width: number;
+  height: number;
+}
 
 export interface AppSettings {
   x1: number;
@@ -32,6 +43,8 @@ export interface ScreenshotItem {
   timestamp: number;
   sizeBytes: number;
   crop: CropSpec | null;
+  origin: ImageOrigin;
+  pageSize?: PageSize;
 }
 
 export interface DisplayInfo {
@@ -44,6 +57,9 @@ export interface ElectronAPI {
   getSettings: () => Promise<AppSettings>;
   saveSettings: (settings: Partial<AppSettings>) => Promise<AppSettings>;
   getImages: () => Promise<ScreenshotItem[]>;
+  pickPdf: () => Promise<PickPdfResult>;
+  insertPdfPages: (payload: InsertPdfPagesPayload) => Promise<ImportedSlidesResult>;
+  insertImages: (afterId: string | null) => Promise<ImportedSlidesResult>;
   setImageCrop: (id: string, crop: CropSpec | null) => Promise<{ success: boolean; image?: ScreenshotItem; error?: string }>;
   detectImageCrop: (id: string) => Promise<{ success: boolean; crop?: CropSpec | null; error?: string }>;
   captureNow: () => Promise<{ success: boolean; image?: ScreenshotItem; error?: string }>;
