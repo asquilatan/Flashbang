@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:electron": "tsc -p tsconfig.electron.json",
+    "test:crop": "npm run build:electron && node --test tests/crop.test.cjs && electron tests/crop-electron.test.cjs",
     "build:all": "npm run build && npm run build:electron",
     "start": "concurrently -k \"tsc -p tsconfig.electron.json -w --preserveWatchOutput\" \"vite\" \"wait-on tcp:5173 && electron .\"",
     "start:dist": "npm run build:all && cross-env NODE_ENV=production electron .",
