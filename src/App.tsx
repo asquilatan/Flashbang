@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TitleBar } from './components/TitleBar';
 import { Sidebar } from './components/Sidebar';
 import { EditorArea } from './components/EditorArea';
@@ -6,6 +6,7 @@ import { BottomPanel } from './components/BottomPanel';
 import { CropSessionProvider } from './components/CropSession';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { AppSettings, ScreenshotItem } from './types';
+import { rasterizePdf } from './pdfImport';
 import type { CropSpec } from '../electron/crop';
 
 export const App: React.FC = () => {
@@ -34,6 +35,8 @@ export const App: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingZip, setIsExportingZip] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const importLock = useRef(false);
 
   const activeImage = images.find(img => img.id === activeTabId) ?? null;
 
@@ -61,7 +64,7 @@ export const App: React.FC = () => {
       addToast({
         type: 'success',
         title: `Captured ${image.name}`,
-        message: `${image.width} × ${image.height} px`,
+        message: `${image.width} × ${image.height} px · drag in the sidebar to reposition`,
       });
     });
 
@@ -70,8 +73,8 @@ export const App: React.FC = () => {
       setActiveTabId(prev => (prev === removedId ? null : prev));
       addToast({
         type: 'info',
-        title: 'Screenshot Undone',
-        message: 'Removed last captured image.',
+        title: 'Slide Removed',
+        message: 'Removed the last slide.',
       });
     });
 
@@ -209,6 +212,95 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleImportPdf = async () => {
+    if (!window.electronAPI || importLock.current) return;
+    importLock.current = true;
+    const afterId = activeTabId;
+    try {
+      const picked = await window.electronAPI.pickPdf();
+      if (picked.canceled) return;
+      if (!picked.success || !picked.data || !picked.name) {
+        throw new Error(picked.error || 'Could not open that PDF.');
+      }
+
+      setImportStatus('Reading PDF…');
+      const pages = await rasterizePdf(picked.data, (completed, total) => {
+        setImportStatus(
+          completed === 0
+            ? `Rendering ${total} page${total === 1 ? '' : 's'}…`
+            : `Rendering page ${completed} of ${total}…`,
+        );
+      });
+      if (pages.length === 0) throw new Error('That PDF has no pages.');
+
+      setImportStatus('Adding slides…');
+      const result = await window.electronAPI.insertPdfPages({
+        afterId,
+        sourceName: picked.name,
+        pages,
+      });
+      if (!result.success) throw new Error(result.error || 'Could not add the PDF pages.');
+
+      const first = result.items?.[0];
+      if (first) {
+        setOpenTabIds(prev => prev.includes(first.id) ? prev : [...prev, first.id]);
+        setActiveTabId(first.id);
+      }
+      addToast({
+        type: 'success',
+        title: 'PDF Imported',
+        message: `Added ${pages.length} page${pages.length === 1 ? '' : 's'} from ${picked.name}.`,
+      });
+    } catch (err) {
+      addToast({
+        type: 'error',
+        title: 'PDF Import Failed',
+        message: err instanceof Error ? err.message : 'Could not import that PDF.',
+      });
+    } finally {
+      importLock.current = false;
+      setImportStatus(null);
+    }
+  };
+
+  const handleInsertImages = async () => {
+    if (!window.electronAPI || importLock.current) return;
+    importLock.current = true;
+    try {
+      const result = await window.electronAPI.insertImages(activeTabId);
+      if (result.canceled) return;
+      if (!result.success) throw new Error(result.error || 'Could not insert those images.');
+
+      const inserted = result.items?.length ?? 0;
+      const first = result.items?.[0];
+      if (first) {
+        setOpenTabIds(prev => prev.includes(first.id) ? prev : [...prev, first.id]);
+        setActiveTabId(first.id);
+      }
+      addToast({
+        type: 'success',
+        title: 'Images Added',
+        message: `Inserted ${inserted} image${inserted === 1 ? '' : 's'}.`,
+      });
+      if (result.warnings?.length) {
+        addToast({
+          type: 'info',
+          title: 'Some Images Were Skipped',
+          message: result.warnings.join('; '),
+          duration: 6000,
+        });
+      }
+    } catch (err) {
+      addToast({
+        type: 'error',
+        title: 'Insert Images Failed',
+        message: err instanceof Error ? err.message : 'Could not insert those images.',
+      });
+    } finally {
+      importLock.current = false;
+    }
+  };
+
   const handleDeleteImage = async (id: string) => {
     if (!window.electronAPI) return;
     await window.electronAPI.deleteImage(id);
@@ -226,8 +318,8 @@ export const App: React.FC = () => {
     handleCloseAllTabs();
     addToast({
       type: 'info',
-      title: 'Cleared All Images',
-      message: 'All temporary screenshots have been purged.',
+      title: 'Cleared All Slides',
+      message: 'All temporary slides have been purged.',
     });
   };
 
@@ -320,6 +412,9 @@ export const App: React.FC = () => {
           onDeleteImage={handleDeleteImage}
           onReorderImages={handleReorderImages}
           onClearAll={handleClearAll}
+          onImportPdf={handleImportPdf}
+          onInsertImages={handleInsertImages}
+          importStatus={importStatus}
         />
 
         {/* Right Side: Preview on top, tabbed menu bar + content below */}
@@ -346,6 +441,7 @@ export const App: React.FC = () => {
             onClearAll={handleClearAll}
             isExportingPdf={isExportingPdf}
             isExportingZip={isExportingZip}
+            isImporting={!!importStatus}
           />
         </CropSessionProvider>
       </div>

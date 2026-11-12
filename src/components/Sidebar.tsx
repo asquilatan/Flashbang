@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { 
-  Image as ImageIcon, 
-  Trash2 
+  FileText,
+  FileUp,
+  Image as ImageIcon,
+  ImagePlus,
+  Trash2
 } from 'lucide-react';
 import { ScreenshotItem } from '../types';
 
@@ -12,6 +15,9 @@ interface SidebarProps {
   onDeleteImage: (id: string) => void;
   onReorderImages: (newOrderIds: string[]) => void;
   onClearAll?: () => void;
+  onImportPdf: () => void;
+  onInsertImages: () => void;
+  importStatus: string | null;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -20,9 +26,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectImage,
   onDeleteImage,
   onReorderImages,
+  onImportPdf,
+  onInsertImages,
+  importStatus,
 }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const activeName = images.find(img => img.id === activeImageId)?.name;
+  const targetHint = activeName ? `Insert after ${activeName}` : 'New slides go to the end';
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
@@ -57,12 +68,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="w-48 lg:w-72 shrink-0 bg-[#141414] border-r border-[#1f1f1f] flex flex-col h-full select-none text-xs text-[#e1e1e1]">
-      {/* Top Header: Captured Images with item count on the right */}
+      {/* Top Header: Slides with item count on the right */}
       <div className="min-h-9 shrink-0 px-3 py-1 flex flex-wrap items-center justify-between gap-1 font-semibold text-[#e1e1e1] tracking-wider text-[11px] uppercase border-b border-[#1f1f1f]">
-        <span>Captured Images</span>
+        <span>Slides</span>
         <span className="text-[11px] font-normal text-[#777777] lowercase tracking-normal">
-          {images.length} item{images.length === 1 ? '' : 's'}
+          {images.length} slide{images.length === 1 ? '' : 's'}
         </span>
+      </div>
+
+      <div className="shrink-0 border-b border-[#1f1f1f] px-2 py-1.5">
+        <div className="flex gap-1">
+          <button
+            onClick={onImportPdf}
+            disabled={!!importStatus}
+            title={`Import PDF pages after ${activeName ? `"${activeName}"` : 'the end'}; pages render at 200 DPI`}
+            className="flex-1 min-w-0 flex items-center justify-center gap-1 rounded border border-[#333333] px-1.5 py-1 text-[10px] text-[#dddddd] hover:bg-[#262626] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <FileUp size={12} className="shrink-0" />
+            <span className="truncate">{importStatus ? 'Importing…' : 'Import PDF'}</span>
+          </button>
+          <button
+            onClick={onInsertImages}
+            disabled={!!importStatus}
+            title={`Insert PNG/JPG images after ${activeName ? `"${activeName}"` : 'the end'}`}
+            className="flex-1 min-w-0 flex items-center justify-center gap-1 rounded border border-[#333333] px-1.5 py-1 text-[10px] text-[#dddddd] hover:bg-[#262626] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ImagePlus size={12} className="shrink-0" />
+            <span className="truncate">Add images</span>
+          </button>
+        </div>
+        <p
+          className={`mt-1 truncate text-[9.5px] leading-3 ${importStatus ? 'text-[#bbbbbb]' : 'text-[#777777]'}`}
+          title={importStatus || `${targetHint} · Drag slides to reorder`}
+        >
+          {importStatus || targetHint}
+        </p>
       </div>
 
       {/* File List */}
@@ -74,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="px-4 py-8 text-center text-[#555555] flex flex-col items-center gap-2">
             <ImageIcon size={24} className="opacity-30 stroke-1" />
             <p className="text-[11.5px] leading-relaxed">
-              No screenshots captured yet.
+              No slides yet. Capture a region or import a PDF.
             </p>
           </div>
         ) : (
@@ -99,9 +139,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   {/* Left: Icon & Name Only */}
                   <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
-                    {/* Image Icon */}
-                    <div className="w-4 h-4 rounded flex items-center justify-center text-[#aaaaaa] flex-shrink-0">
-                      <ImageIcon size={14} />
+                    {/* Origin Icon */}
+                    <div
+                      className="w-4 h-4 rounded flex items-center justify-center text-[#aaaaaa] flex-shrink-0"
+                      title={img.origin === 'pdf' ? 'Imported PDF page' : img.origin === 'image' ? 'Inserted image' : 'Screenshot'}
+                    >
+                      {img.origin === 'pdf' ? <FileText size={14} /> : <ImageIcon size={14} />}
                     </div>
 
                     <div className="min-w-0 flex flex-col items-start gap-0.5">

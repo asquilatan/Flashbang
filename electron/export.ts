@@ -38,12 +38,16 @@ export async function exportToPdf(window: BrowserWindow | null): Promise<{ succe
       const imgHeight = embeddedImage.height;
 
       if (settings.pdfPageMode === 'exact') {
-        const page = pdfDoc.addPage([imgWidth, imgHeight]);
+        // Imported PDF pages keep their source point size; the 200-DPI raster is
+        // drawn into that box instead of using pixels as points.
+        const pageWidth = item.pageSize && item.width > 0 ? imgWidth * item.pageSize.width / item.width : imgWidth;
+        const pageHeight = item.pageSize && item.height > 0 ? imgHeight * item.pageSize.height / item.height : imgHeight;
+        const page = pdfDoc.addPage([pageWidth, pageHeight]);
         page.drawImage(embeddedImage, {
           x: 0,
           y: 0,
-          width: imgWidth,
-          height: imgHeight,
+          width: pageWidth,
+          height: pageHeight,
         });
       } else {
         // Fit to A4

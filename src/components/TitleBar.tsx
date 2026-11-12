@@ -34,7 +34,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ imageCount }) => {
 
       {/* Center: Status */}
       <div className="flex items-center gap-2 text-[#777777] text-[11px] pointer-events-none">
-        <span>{imageCount > 0 ? `${imageCount} screenshot${imageCount === 1 ? '' : 's'}` : ''}</span>
+        <span>{imageCount > 0 ? `${imageCount} slide${imageCount === 1 ? '' : 's'}` : ''}</span>
       </div>
 
       {/* Right: Window Controls */}

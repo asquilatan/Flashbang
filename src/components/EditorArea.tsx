@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Image as ImageIcon } from 'lucide-react';
+import { X, FileText, Image as ImageIcon } from 'lucide-react';
 import { ScreenshotItem } from '../types';
 import { CropPreview } from './CropPreview';
 
@@ -44,7 +44,9 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                   ${isActive ? 'bg-[#000000] text-[#ffffff] font-medium' : 'bg-[#111111] text-[#777777] hover:bg-[#181818]'}
                 `}
               >
-                <ImageIcon size={13} className="text-[#aaaaaa] flex-shrink-0" />
+                {img.origin === 'pdf'
+                  ? <FileText size={13} className="text-[#aaaaaa] flex-shrink-0" />
+                  : <ImageIcon size={13} className="text-[#aaaaaa] flex-shrink-0" />}
                 <span className="text-[12.5px] font-normal truncate max-w-[140px]">{img.name}</span>
                 <button
                   onClick={(e) => {

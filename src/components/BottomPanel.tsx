@@ -16,6 +16,7 @@ interface BottomPanelProps {
   onClearAll: () => void;
   isExportingPdf: boolean;
   isExportingZip: boolean;
+  isImporting: boolean;
 }
 
 type PanelTab = 'target' | 'save' | 'hotkeys' | 'crop';
@@ -42,6 +43,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
   onClearAll,
   isExportingPdf,
   isExportingZip,
+  isImporting,
 }) => {
   const [activeTab, setActiveTab] = useState<PanelTab>('target');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -187,7 +189,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
             <button
               onClick={onSaveToPdf}
-              disabled={images.length === 0 || isExportingPdf}
+              disabled={images.length === 0 || isExportingPdf || isImporting}
               className="w-full flex items-center justify-center bg-[#e1e1e1] hover:bg-[#ffffff] text-[#000000] py-1.5 rounded text-[11px] font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <span>{isExportingPdf ? 'Exporting PDF...' : `Save to PDF (${images.length} pages)`}</span>
@@ -195,7 +197,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
             <button
               onClick={onSaveToZip}
-              disabled={images.length === 0 || isExportingZip}
+              disabled={images.length === 0 || isExportingZip || isImporting}
               className="w-full flex items-center justify-center bg-[#222222] hover:bg-[#2c2c2c] text-[#e1e1e1] py-1.5 rounded text-[11px] font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <span>{isExportingZip ? 'Compressing ZIP...' : `Save as ${images.length} Images (ZIP)`}</span>
@@ -203,7 +205,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
             {showClearConfirm ? (
               <div className="flex items-center gap-1 bg-[#251010] p-1 rounded border border-[#f44747]">
-                <span className="text-[10px] text-[#f44747] flex-1">Delete all {images.length}?</span>
+                <span className="text-[10px] text-[#f44747] flex-1">Delete all {images.length} slide{images.length === 1 ? '' : 's'}?</span>
                 <button
                   onClick={() => {
                     onClearAll();
@@ -220,11 +222,11 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
             ) : (
               <button
                 onClick={() => setShowClearConfirm(true)}
-                disabled={images.length === 0}
+                disabled={images.length === 0 || isImporting}
                 className="w-full flex items-center justify-center gap-1 text-[#f44747] hover:bg-[#251010] py-1 rounded text-[11px] transition-colors disabled:opacity-20 disabled:hover:bg-transparent disabled:cursor-not-allowed"
               >
                 <Trash2 size={12} />
-                <span>Clear All Images</span>
+                <span>Clear All Slides</span>
               </button>
             )}
           </div>
