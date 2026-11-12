@@ -2,9 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { TitleBar } from './components/TitleBar';
 import { Sidebar } from './components/Sidebar';
 import { EditorArea } from './components/EditorArea';
-import { SettingsPanel } from './components/SettingsPanel';
+import { BottomPanel } from './components/BottomPanel';
+import { CropSessionProvider } from './components/CropSession';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { AppSettings, ScreenshotItem } from './types';
+import type { CropSpec } from '../electron/crop';
 
 export const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({
@@ -17,6 +19,7 @@ export const App: React.FC = () => {
     pdfPageMode: 'exact',
     pdfOrientation: 'auto',
     captureMode: 'region',
+    autoDetectBlackBars: false,
     windowHwnd: null,
     windowTitle: '',
     windowX1: 0,
@@ -31,6 +34,8 @@ export const App: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingZip, setIsExportingZip] = useState(false);
+
+  const activeImage = images.find(img => img.id === activeTabId) ?? null;
 
   const addToast = useCallback((toast: Omit<ToastMessage, 'id'>) => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
@@ -174,6 +179,36 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleSetImageCrop = async (id: string, crop: CropSpec | null): Promise<boolean> => {
+    try {
+      if (!window.electronAPI) throw new Error('The desktop connection is unavailable.');
+      const result = await window.electronAPI.setImageCrop(id, crop);
+      if (!result.success) throw new Error(result.error || 'Could not update this image crop.');
+      // The on-images-updated listener is the only source of committed crop updates.
+      return true;
+    } catch (err) {
+      addToast({
+        type: 'error',
+        title: 'Crop Update Failed',
+        message: err instanceof Error ? err.message : 'Could not update this image crop.',
+      });
+      return false;
+    }
+  };
+
+  const handleDetectImageCrop = async (id: string): Promise<{ success: boolean; crop?: CropSpec | null; error?: string }> => {
+    try {
+      if (!window.electronAPI) throw new Error('The desktop connection is unavailable.');
+      const result = await window.electronAPI.detectImageCrop(id);
+      if (!result.success) throw new Error(result.error || 'Could not detect black bars.');
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not detect black bars.';
+      addToast({ type: 'error', title: 'Black Bar Detection Failed', message });
+      return { success: false, error: message };
+    }
+  };
+
   const handleDeleteImage = async (id: string) => {
     if (!window.electronAPI) return;
     await window.electronAPI.deleteImage(id);
@@ -287,19 +322,18 @@ export const App: React.FC = () => {
           onClearAll={handleClearAll}
         />
 
-        {/* Right Side: Split 70% Top (Editor/Tabs) / 30% Bot (Settings/Controls) */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Right Side: Preview on top, tabbed menu bar + content below */}
+        <CropSessionProvider image={activeImage} onApply={handleSetImageCrop} onDetect={handleDetectImageCrop}>
           <EditorArea
             images={images}
             openTabIds={openTabIds}
             activeTabId={activeTabId}
-            settings={settings}
             onSelectTab={handleSelectTab}
             onCloseTab={handleCloseTab}
             onCloseAllTabs={handleCloseAllTabs}
           />
 
-          <SettingsPanel
+          <BottomPanel
             settings={settings}
             images={images}
             onUpdateSettings={handleUpdateSettings}
@@ -313,7 +347,7 @@ export const App: React.FC = () => {
             isExportingPdf={isExportingPdf}
             isExportingZip={isExportingZip}
           />
-        </div>
+        </CropSessionProvider>
       </div>
 
       {/* Toast Notifications */}

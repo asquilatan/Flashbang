@@ -56,9 +56,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className="w-72 bg-[#141414] border-r border-[#1f1f1f] flex flex-col h-full select-none text-xs text-[#e1e1e1]">
+    <aside className="w-48 lg:w-72 shrink-0 bg-[#141414] border-r border-[#1f1f1f] flex flex-col h-full select-none text-xs text-[#e1e1e1]">
       {/* Top Header: Captured Images with item count on the right */}
-      <div className="h-9 px-4 flex items-center justify-between font-semibold text-[#e1e1e1] tracking-wider text-[11px] uppercase border-b border-[#1f1f1f]">
+      <div className="min-h-9 shrink-0 px-3 py-1 flex flex-wrap items-center justify-between gap-1 font-semibold text-[#e1e1e1] tracking-wider text-[11px] uppercase border-b border-[#1f1f1f]">
         <span>Captured Images</span>
         <span className="text-[11px] font-normal text-[#777777] lowercase tracking-normal">
           {images.length} item{images.length === 1 ? '' : 's'}
@@ -104,9 +104,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <ImageIcon size={14} />
                     </div>
 
-                    {/* File Name Only (VS Code explorer typography) */}
-                    <div className="truncate flex items-center">
-                      <span className="text-[13px] font-normal text-[#cccccc] group-hover:text-[#ffffff] truncate">{img.name}</span>
+                    <div className="min-w-0 flex flex-col items-start gap-0.5">
+                      <span className="max-w-full text-[13px] font-normal text-[#cccccc] group-hover:text-[#ffffff] truncate">{img.name}</span>
+                      {img.crop && (
+                        <span
+                          className="rounded border border-[#444444] px-1 text-[9px] leading-3 font-normal text-[#bbbbbb]"
+                          title={`${img.crop.source === 'auto' ? 'Auto' : 'Manual'} crop`}
+                        >
+                          Cropped<span className="sr-only"> ({img.crop.source === 'auto' ? 'Auto' : 'Manual'} crop)</span>
+                        </span>
+                      )}
                     </div>
                   </div>
 
