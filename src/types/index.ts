@@ -1,3 +1,5 @@
+import type { CropSpec } from '../../electron/crop';
+
 export type CaptureMode = 'region' | 'window';
 
 export interface AppSettings {
@@ -10,6 +12,7 @@ export interface AppSettings {
   pdfPageMode: 'fit_a4' | 'exact';
   pdfOrientation: 'auto' | 'portrait' | 'landscape';
   captureMode: CaptureMode;
+  autoDetectBlackBars: boolean;
   windowHwnd: number | null;
   windowTitle: string;
   windowX1: number;
@@ -28,6 +31,7 @@ export interface ScreenshotItem {
   height: number;
   timestamp: number;
   sizeBytes: number;
+  crop: CropSpec | null;
 }
 
 export interface DisplayInfo {
@@ -40,6 +44,8 @@ export interface ElectronAPI {
   getSettings: () => Promise<AppSettings>;
   saveSettings: (settings: Partial<AppSettings>) => Promise<AppSettings>;
   getImages: () => Promise<ScreenshotItem[]>;
+  setImageCrop: (id: string, crop: CropSpec | null) => Promise<{ success: boolean; image?: ScreenshotItem; error?: string }>;
+  detectImageCrop: (id: string) => Promise<{ success: boolean; crop?: CropSpec | null; error?: string }>;
   captureNow: () => Promise<{ success: boolean; image?: ScreenshotItem; error?: string }>;
   undoLast: () => Promise<{ success: boolean; removedId?: string; error?: string }>;
   deleteImage: (id: string) => Promise<{ success: boolean }>;

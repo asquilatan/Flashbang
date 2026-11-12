@@ -9,6 +9,8 @@ import { openRegionSelectOverlay, closeRegionSelectOverlay } from './overlay';
 import { openWindowSelectOverlay, closeWindowSelectOverlay } from './windowOverlay';
 import { enumeratePickableWindows, closeWindowPickerCache } from './windowPicker';
 import { exportToPdf, exportToZip } from './export';
+import { validateCropSpec } from './crop';
+import { detectScreenshotCrop } from './imageProcessing';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -108,6 +110,10 @@ ipcMain.handle('get-settings', () => {
 });
 
 ipcMain.handle('save-settings', (_event, updates) => {
+  if (!updates || typeof updates !== 'object' || Array.isArray(updates)) throw new Error('Invalid settings.');
+  if ('autoDetectBlackBars' in updates && typeof updates.autoDetectBlackBars !== 'boolean') {
+    throw new Error('Auto-crop setting must be a boolean.');
+  }
   const newSettings = updateStoredSettings(updates);
   updateRegisteredHotkeys();
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -146,6 +152,37 @@ ipcMain.handle('undo-last', () => {
     return { success: false, error: 'No screenshot to undo.' };
   } catch (err: any) {
     return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('set-image-crop', (event, id: unknown, value: unknown) => {
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents ||
+      event.senderFrame !== mainWindow.webContents.mainFrame) {
+    return { success: false, error: 'Crop requests must come from the main window.' };
+  }
+  const image = typeof id === 'string' ? tempManager.getItems().find(item => item.id === id) : undefined;
+  if (!image) return { success: false, error: 'Screenshot no longer exists.' };
+  try {
+    const crop = validateCropSpec(value, image.width, image.height);
+    const updated = tempManager.setCrop(image.id, crop)!;
+    mainWindow.webContents.send('on-images-updated', tempManager.getItems());
+    return { success: true, image: updated };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unable to update crop.' };
+  }
+});
+
+ipcMain.handle('detect-image-crop', (event, id: unknown) => {
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents ||
+      event.senderFrame !== mainWindow.webContents.mainFrame) {
+    return { success: false, error: 'Crop requests must come from the main window.' };
+  }
+  const image = typeof id === 'string' ? tempManager.getItems().find(item => item.id === id) : undefined;
+  if (!image) return { success: false, error: 'Screenshot no longer exists.' };
+  try {
+    return { success: true, crop: detectScreenshotCrop(image) };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unable to detect black bars.' };
   }
 });
 

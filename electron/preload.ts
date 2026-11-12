@@ -1,11 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { AppSettings } from './db';
 import { ScreenshotItem } from './tempManager';
+import type { CropSpec } from './crop';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings: Partial<AppSettings>) => ipcRenderer.invoke('save-settings', settings),
   getImages: () => ipcRenderer.invoke('get-images'),
+  setImageCrop: (id: string, crop: CropSpec | null) => ipcRenderer.invoke('set-image-crop', id, crop),
+  detectImageCrop: (id: string) => ipcRenderer.invoke('detect-image-crop', id),
   captureNow: () => ipcRenderer.invoke('capture-now'),
   undoLast: () => ipcRenderer.invoke('undo-last'),
   deleteImage: (id: string) => ipcRenderer.invoke('delete-image', id),

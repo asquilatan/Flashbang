@@ -1,6 +1,7 @@
 import { desktopCapturer, screen } from 'electron';
 import { getStoredSettings, AppSettings } from './db';
 import { tempManager, ScreenshotItem } from './tempManager';
+import { detectScreenshotCrop } from './imageProcessing';
 import {
   enumeratePickableWindows,
   hwndFromSourceId,
@@ -19,11 +20,20 @@ interface ResolvedTarget {
 export async function capturePrimaryScreenRegion(): Promise<ScreenshotItem> {
   const settings = getStoredSettings();
 
-  if (settings.captureMode === 'window' && settings.windowHwnd !== null) {
-    return captureWindow(settings);
+  const item = await (settings.captureMode === 'window' && settings.windowHwnd !== null
+    ? captureWindow(settings)
+    : captureRegion(settings));
+
+  if (settings.autoDetectBlackBars) {
+    try {
+      const crop = detectScreenshotCrop(item);
+      if (crop) return tempManager.setCrop(item.id, crop)!;
+    } catch (error) {
+      console.error('Black-bar detection failed; keeping the original screenshot:', error);
+    }
   }
 
-  return captureRegion(settings);
+  return item;
 }
 
 /**
